@@ -18,10 +18,10 @@ public class PetDbHelper extends SQLiteOpenHelper {
 
     private static final String SQL_CREATE_DATABASE = "CREATE TABLE " + PetEntry.TABLE_NAME + "( " +
             PetEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            PetEntry.COLUMN_PET_NAME + " STRING, " +
-            PetEntry.COLUMN_PET_BREED + " STRING, " +
-            PetEntry.COLUMN_PET_GENDER + " INTEGER, " +
-            PetEntry.COLUMN_PET_WEIGHT + " INTEGER " + ")";
+            PetEntry.COLUMN_PET_NAME + " TEXT NOT NULL, " +
+            PetEntry.COLUMN_PET_BREED + " TEXT, " +
+            PetEntry.COLUMN_PET_GENDER + " INTEGER NOT NULL, " +
+            PetEntry.COLUMN_PET_WEIGHT + " INTEGER NOT NULL DEFAULT 0" + ")";
 
 
     public PetDbHelper(Context context) {
