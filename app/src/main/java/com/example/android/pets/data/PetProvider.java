@@ -79,6 +79,8 @@ public class PetProvider extends ContentProvider {
             default:
                 throw new IllegalArgumentException("Cannot query unknown URI " + uri.toString());
         }
+
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
         return cursor;
     }
 
@@ -99,12 +101,20 @@ public class PetProvider extends ContentProvider {
     @Override
     public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
         final int match = sUriMatcher.match(uri);
+        Uri return_uri = uri;
         switch (match) {
             case PETS:
-                return insertPet(uri, values);
+                return_uri = insertPet(uri, values);
+                break;
             default:
                 throw new IllegalArgumentException("Insertion is not supported for " + uri);
         }
+
+        if(return_uri != null) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
+        return return_uri;
     }
 
     private Uri insertPet(@NonNull Uri uri, @Nullable ContentValues values) {
@@ -149,36 +159,53 @@ public class PetProvider extends ContentProvider {
         SQLiteDatabase database = mDbHelper.getWritableDatabase();
 
         final int match = sUriMatcher.match(uri);
+        int deleteCount;
         switch (match) {
             case PETS:
                 // Delete all rows that match the selection and selection args
-                return database.delete(PetEntry.TABLE_NAME, selection, selectionArgs);
+                deleteCount = database.delete(PetEntry.TABLE_NAME, selection, selectionArgs);
+                break;
             case PET_ID:
                 // Delete a single row given by the ID in the URI
                 selection = PetEntry._ID + "=?";
                 selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
-                return database.delete(PetEntry.TABLE_NAME, selection, selectionArgs);
+                deleteCount = database.delete(PetEntry.TABLE_NAME, selection, selectionArgs);
+                break;
             default:
                 throw new IllegalArgumentException("Deletion is not supported for " + uri);
         }
+        if(deleteCount > 0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
+        return deleteCount;
     }
 
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection, @Nullable String[] selectionArgs) {
         final int match = sUriMatcher.match(uri);
+        int updateCount;
         switch (match) {
             case PETS:
-                return updatePet(uri, values, selection, selectionArgs);
+                updateCount = updatePet(uri, values, selection, selectionArgs);
+                break;
             case PET_ID:
                 // For the PET_ID code, extract out the ID from the URI,
                 // so we know which row to update. Selection will be "_id=?" and selection
                 // arguments will be a String array containing the actual ID.
                 selection = PetEntry._ID + "=?";
                 selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
-                return updatePet(uri, values, selection, selectionArgs);
+                updateCount = updatePet(uri, values, selection, selectionArgs);
+                break;
             default:
                 throw new IllegalArgumentException("Update is not supported for " + uri);
         }
+
+        if(updateCount > 0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
+        return updateCount;
     }
 
     /**
